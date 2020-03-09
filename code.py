@@ -10,6 +10,8 @@ from adafruit_ble.advertising.standard import ProvideServicesAdvertisement
 from adafruit_ble.services.nordic import UARTService
 from adafruit_bluefruit_connect.packet import Packet
 from adafruit_bluefruit_connect.color_packet import ColorPacket
+from adafruit_bluefruit_connect.button_packet import ButtonPacket
+from adafruit_clue import clue
 
 ble = BLERadio()
 uart_server = UARTService()
@@ -87,7 +89,7 @@ last_step_time = time.monotonic()
 def twinkle(color):
     global twinkle_list, twinkle_bright, last_step_time
 
-    #non-blocking delay between animatio steps
+    #non-blocking delay between animation steps
     cur_time = time.monotonic()
     if (cur_time - last_step_time < twinkle_delay):
         return
@@ -128,4 +130,28 @@ while True:
                 current_color = fancy.CRGB(packet.color[0], packet.color[1], packet.color[2])
                 #change the colors on the TFT
                 set_heart_colors(rgb_to_hex(packet.color))
+            elif isinstance(packet, ButtonPacket):
+                if packet.pressed:
+                    if packet.button == ButtonPacket.UP:
+                        # The UP button was pressed.
+                        print("UP button pressed!")
+                        if twinkle_delay >= 0:
+                            twinkle_delay -= 0.01
+                    elif packet.button == ButtonPacket.DOWN:
+                        # The Down button was pressed.
+                        print("DOWN button pressed!")
+                        twinkle_delay += 0.01
+                    elif packet.button == ButtonPacket.LEFT or packet.button == ButtonPacket.RIGHT:
+                        print("LEFT or RIGHT were pressed!")
+                        # set the current color to a random color
+                        # set random values for RGB tuple (between 0 and 255)
+                        r = random.randint(0, 256)
+                        g = random.randint(0, 256)
+                        b = random.randint(0, 256)
+                        current_color = fancy.CRGB(r, g, b)
+                    elif packet.button == ButtonPacket.BUTTON_1:
+                        print("Button 1 was pressed")
+                        clue.play_tone(880, 1)
+                    elif packet.button == ButtonPacket.BUTTON_2:
+                        clue.play_tone(442, 1)
         twinkle(current_color)
